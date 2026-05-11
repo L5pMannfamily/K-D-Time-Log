@@ -390,7 +390,7 @@ try {
   } catch(err) {
     btn.disabled = false;
     document.getElementById('saving-overlay').classList.remove('show');
-    showToast('Could not reach sheet — check connection', 'error');
+    showToast('Error: ' + err.message, 'error');
   }
 }
 
