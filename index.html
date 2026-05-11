@@ -371,7 +371,9 @@ try {
       who:         payload.who,
       description: payload.description
     });
-    const response = await fetch(APPS_SCRIPT_URL + '?' + params.toString());
+    const response = await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
+  redirect: 'follow'
+});
     const result = await response.json();
     btn.disabled = false;
     document.getElementById('saving-overlay').classList.remove('show');
