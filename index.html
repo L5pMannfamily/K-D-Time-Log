@@ -360,39 +360,29 @@ async function saveEntry() {
     description: desc
   };
 
-try {
-    // Use GET with URL params — avoids CORS preflight issues with Apps Script
-    const params = new URLSearchParams({
-      date:        payload.date,
-      startTime:   payload.startTime,
-      endTime:     payload.endTime,
-      who:         payload.who,
-      description: payload.description
-    });
-    const response = await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
-  redirect: 'follow'
-});
-    const result = await response.json();
+// Use an Image request — bypasses CORS and redirect issues entirely
+  const params = new URLSearchParams({
+    date:        payload.date,
+    startTime:   payload.startTime,
+    endTime:     payload.endTime,
+    who:         payload.who,
+    description: payload.description
+  });
+
+  const img = new Image();
+  img.onload = img.onerror = () => {
     btn.disabled = false;
     document.getElementById('saving-overlay').classList.remove('show');
-    if (result.success) {
-      entries.unshift({ ...payload });
-      renderEntries();
-      document.getElementById('f-start').value = end || '';
-      document.getElementById('f-end').value = '';
-      document.getElementById('f-desc').value = '';
-      document.getElementById('transcript').textContent = 'e.g. "Started at 9, stopped at 11:30, worked on client invoices"';
-      document.getElementById('transcript').classList.remove('has-text');
-      showToast('Saved to sheet ✓', 'success');
-    } else {
-      showToast('Error: ' + result.error, 'error');
-    }
-  } catch(err) {
-    btn.disabled = false;
-    document.getElementById('saving-overlay').classList.remove('show');
-    showToast('Error: ' + err.message, 'error');
-  }
-}
+    entries.unshift({ ...payload });
+    renderEntries();
+    document.getElementById('f-start').value = end || '';
+    document.getElementById('f-end').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('transcript').textContent = 'e.g. "Started at 9, stopped at 11:30, worked on client invoices"';
+    document.getElementById('transcript').classList.remove('has-text');
+    showToast('Saved to sheet ✓', 'success');
+  };
+  img.src = APPS_SCRIPT_URL + '?' + params.toString();
 
 function renderEntries() {
   const list = document.getElementById('entries-list');
