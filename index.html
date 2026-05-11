@@ -216,29 +216,36 @@ function parseTime(text) {
 function parseTranscript(text) {
   let start = '', end = '', desc = '';
 
-  const timeTokens = [];
-  const allTimes = text.matchAll(/\b(\d{1,2})(?::(\d{2}))?\s*(?:am|pm)?/gi);
-  for (const m of allTimes) timeTokens.push({ parsed: parseTime(m[0]) });
+  // Match times including optional am/pm
+  const timeRe = /\d{1,2}(?::\d{2})?\s*(?:am|pm)?/gi;
 
-  const rangeMatch = text.match(/(?:from\s+)?([\d:apm\s]+?)\s+(?:to|until|till|through)\s+([\d:apm\s]+?)(?:\s*[,.]|\s+(?:work|do|on|i|–|-)|$)/i);
-  if (rangeMatch) { start = parseTime(rangeMatch[1]); end = parseTime(rangeMatch[2]); }
+  const rangeMatch = text.match(/(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+(?:to|until|till|through)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
+  if (rangeMatch) {
+    start = parseTime(rangeMatch[1]);
+    end   = parseTime(rangeMatch[2]);
+  }
 
   if (!start) {
-    const sm = text.match(/(?:start(?:ed|ing)?|begin|began)\s+(?:at\s+)?([\d:apm\s]+?)(?:\s*[,.]|\s+(?:to|until|stop|finish|end|work)|$)/i);
+    const sm = text.match(/(?:start(?:ed|ing)?|begin|began)\s+(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
     if (sm) start = parseTime(sm[1]);
   }
   if (!end) {
-    const em = text.match(/(?:stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?([\d:apm\s]+?)(?:\s*[,.]|\s+(?:work|on|do)|$)/i);
+    const em = text.match(/(?:stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
     if (em) end = parseTime(em[1]);
   }
 
-  if (!start && timeTokens.length >= 1) start = timeTokens[0].parsed;
-  if (!end && timeTokens.length >= 2) end = timeTokens[1].parsed;
+  // Fallback: first two time tokens
+  if (!start || !end) {
+    const tokens = [...text.matchAll(/\d{1,2}(?::\d{2})?\s*(?:am|pm)?/gi)].map(m => parseTime(m[0])).filter(Boolean);
+    if (!start && tokens.length >= 1) start = tokens[0];
+    if (!end   && tokens.length >= 2) end   = tokens[1];
+  }
 
-  // Grab everything after the last time-related phrase as the description
-  const descMatch = text.match(/(?:(?:to|until|till|through|stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?[\d:]+\s*(?:am|pm)?[,.]?\s*)(.+)$/i);
-  if (descMatch) {
-    desc = descMatch[1].replace(/^(?:worked?\s+on|working\s+on|did|doing|on)\s+/i, '').trim();
+  // Description: everything after the last time token (including its am/pm)
+  const lastTimeMatch = [...text.matchAll(/\d{1,2}(?::\d{2})?\s*(?:am|pm)?/gi)].pop();
+  if (lastTimeMatch) {
+    const afterLast = text.slice(lastTimeMatch.index + lastTimeMatch[0].length).trim();
+    desc = afterLast.replace(/^[,.\-\s]+/, '').replace(/^(?:worked?\s+on|working\s+on|did|doing|on)\s+/i, '').trim();
   }
 
   return { start, end, desc };
