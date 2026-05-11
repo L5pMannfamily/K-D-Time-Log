@@ -4,8 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="K&D Time Log New">
-<title>K&D Time Log New</title>
+<meta name="apple-mobile-web-app-title" content="K&D Time Log">
+<title>K&D Time Log</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
   :root {
@@ -89,7 +89,7 @@
   <div class="header">
     <div class="logo"><i class="ti ti-clock"></i></div>
     <div class="header-text">
-      <div class="title">K&D Time Log New</div>
+      <div class="title">K&D Time Log</div>
       <div class="sub" id="today-label"></div>
     </div>
   </div>
@@ -177,7 +177,6 @@ function pad(n) { return String(n).padStart(2,'0'); }
 function parseTime(text) {
   if (!text) return '';
   text = text.toLowerCase().trim();
-  // Match time with am/pm
   const m12 = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/);
   if (m12) {
     let h = parseInt(m12[1]), min = m12[2] ? parseInt(m12[2]) : 0;
@@ -185,10 +184,8 @@ function parseTime(text) {
     if (m12[3] === 'am' && h === 12) h = 0;
     return pad(h) + ':' + pad(min);
   }
-  // Match 24h time
   const m24 = text.match(/(\d{1,2}):(\d{2})/);
   if (m24) return pad(parseInt(m24[1])) + ':' + m24[2];
-  // Bare number fallback
   const mh = text.match(/\b(\d{1,2})\b/);
   if (mh) { let h = parseInt(mh[1]); if (h < 7) h += 12; return pad(h) + ':00'; }
   return '';
@@ -197,33 +194,35 @@ function parseTime(text) {
 function parseTranscript(text) {
   let start = '', end = '', desc = '';
 
-  // Collect all time tokens that include am/pm (most reliable)
+  // Normalize: collapse multiple spaces
+  text = text.replace(/\s+/g, ' ').trim();
+
+  // Collect all time tokens that include am/pm
   const ampmTokens = Array.from(text.matchAll(/\d{1,2}(?::\d{2})?\s*(?:am|pm)/gi));
 
-  // Try "X to/until/till Y" pattern — each side greedily captures digits + optional am/pm
-  const rangeRe = /(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+(?:to|until|till|through)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i;
-  const rangeMatch = text.match(rangeRe);
+  // Try "X to/until/till/through Y" range pattern
+  const rangeMatch = text.match(/(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+(?:to|until|till|through)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
   if (rangeMatch) {
     start = parseTime(rangeMatch[1]);
     end   = parseTime(rangeMatch[2]);
   }
 
-  // Try "started at X"
+  // Try "started/began at X"
   if (!start) {
     const sm = text.match(/(?:start(?:ed|ing)?|begin|began)\s+(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
     if (sm) start = parseTime(sm[1]);
   }
-  // Try "stopped/finished at Y"
+  // Try "stopped/finished/done at Y"
   if (!end) {
     const em = text.match(/(?:stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
     if (em) end = parseTime(em[1]);
   }
 
-  // Fallback: use the first two am/pm tokens
+  // Fallback: first two am/pm tokens
   if (!start && ampmTokens.length >= 1) start = parseTime(ampmTokens[0][0]);
   if (!end   && ampmTokens.length >= 2) end   = parseTime(ampmTokens[1][0]);
 
-  // Description: everything after the LAST am/pm time token in the string
+  // Description: everything after the last am/pm token
   if (ampmTokens.length > 0) {
     const lastToken = ampmTokens[ampmTokens.length - 1];
     const afterLast = text.slice(lastToken.index + lastToken[0].length);
@@ -297,9 +296,10 @@ function stopMic() {
 }
 
 function fillFromTranscript(text) {
-  console.log('RAW TRANSCRIPT:', JSON.stringify(text));
   const { start, end, desc } = parseTranscript(text);
-  console.log('PARSED:', { start, end, desc });
+  if (start) document.getElementById('f-start').value = start;
+  if (end)   document.getElementById('f-end').value   = end;
+  if (desc)  document.getElementById('f-desc').value  = desc;
 }
 
 function fmt12(timeVal) {
