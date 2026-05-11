@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Time Tracker">
+<title>Time Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --accent: #1D9E75;
+    --accent-light: #E1F5EE;
+    --accent-dark: #0F6E56;
+    --rec: #E24B4A;
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --text: #1a1a1a;
+    --text2: #6b6b68;
+    --border: rgba(0,0,0,0.12);
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #2a2a28;
+      --text: #f0ede8;
+      --text2: #9a9894;
+      --border: rgba(255,255,255,0.12);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
+
+  .app { max-width: 420px; margin: 0 auto; padding: 16px 16px 40px; }
+
+  .header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-top: 8px; }
+  .logo { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo i { color: #fff; font-size: 20px; }
+  .header-text .title { font-size: 18px; font-weight: 600; }
+  .header-text .sub { font-size: 13px; color: var(--text2); }
+
+  .card { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 16px; margin-bottom: 12px; }
+
+  .who-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .who-btn { padding: 11px 8px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text2); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .who-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent-dark); }
+  .who-btn i { font-size: 18px; }
+
+  .mic-area { text-align: center; padding: 8px 0 4px; }
+  .mic-btn { width: 76px; height: 76px; border-radius: 50%; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); transition: all 0.18s; }
+  .mic-btn i { font-size: 30px; color: #fff; }
+  .mic-btn.recording { background: var(--rec); animation: pulse 1.2s ease-in-out infinite; }
+  .mic-btn:active { transform: scale(0.94); }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(226,75,74,0.3); } 50% { box-shadow: 0 0 0 14px rgba(226,75,74,0); } }
+  .mic-hint { font-size: 13px; color: var(--text2); margin-top: 10px; }
+
+  .transcript { min-height: 38px; margin: 12px 0 4px; padding: 10px 12px; background: var(--bg2); border-radius: 8px; font-size: 14px; color: var(--text2); font-style: italic; line-height: 1.5; }
+  .transcript.has-text { color: var(--text); font-style: normal; }
+
+  .fields { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+  input[type=time], input[type=date], input[type=text], textarea {
+    width: 100%; padding: 9px 11px; font-size: 15px;
+    border: 0.5px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text);
+    font-family: inherit; outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+  textarea { resize: none; height: 68px; line-height: 1.4; }
+
+  .save-btn { width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: var(--radius); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; transition: background 0.15s, transform 0.1s; }
+  .save-btn:hover { background: var(--accent-dark); }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn i { font-size: 20px; }
+  .save-btn:disabled { background: #9FE1CB; cursor: not-allowed; }
+
+  .log-header { margin-bottom: 10px; }
+  .log-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+  .entry { padding: 12px; border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--bg); }
+  .entry-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .entry-who { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+  .entry-who.dale { background: var(--accent-light); color: var(--accent-dark); }
+  .entry-who.kelly { background: #E6F1FB; color: #0C447C; }
+  .entry-times { font-size: 13px; color: var(--text2); font-variant-numeric: tabular-nums; }
+  .entry-task { font-size: 14px; color: var(--text); line-height: 1.4; }
+  .empty { font-size: 14px; color: var(--text2); text-align: center; padding: 20px 0; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 10px 18px; border-radius: 24px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
+  .toast.success { background: #27500A; color: #C0DD97; }
+  .toast.error { background: #791F1F; color: #F7C1C1; }
+  .toast.show { opacity: 1; }
+
+  .saving-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 998; align-items: center; justify-content: center; }
+  .saving-overlay.show { display: flex; }
+  .saving-box { background: var(--bg); border-radius: var(--radius); padding: 20px 28px; font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 12px; }
+  .spinner { width: 20px; height: 20px; border: 2.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .config-banner { background: #FAEEDA; border: 0.5px solid #EF9F27; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; font-size: 13px; color: #633806; line-height: 1.6; display: none; }
+  .config-banner strong { display: block; margin-bottom: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="config-banner" id="config-banner">
+    <strong>⚙️ Setup needed</strong>
+    Open this file, find the line near the top of the &lt;script&gt; that says<br>
+    <code>var APPS_SCRIPT_URL = ''</code><br>
+    and paste your Apps Script deployment URL between the quotes, then save and re-upload to GitHub.
+  </div>
+
+  <div class="header">
+    <div class="logo"><i class="ti ti-clock"></i></div>
+    <div class="header-text">
+      <div class="title">Time Tracker</div>
+      <div class="sub" id="today-label"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="who-row">
+      <button class="who-btn active" id="btn-dale" onclick="setWho('dale')">
+        <i class="ti ti-user"></i> Dale
+      </button>
+      <button class="who-btn" id="btn-kelly" onclick="setWho('kelly')">
+        <i class="ti ti-user"></i> Kelly
+      </button>
+    </div>
+
+    <div class="mic-area">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()" aria-label="Start voice input">
+        <i class="ti ti-microphone" id="mic-icon"></i>
+      </button>
+      <div class="mic-hint" id="mic-hint">Tap to speak your entry</div>
+    </div>
+
+    <div class="transcript" id="transcript">e.g. "Started at 9, stopped at 11:30, worked on client invoices"</div>
+
+    <div class="fields">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Start time</label>
+          <input type="time" id="f-start" />
+        </div>
+        <div class="field">
+          <label>End time</label>
+          <input type="time" id="f-end" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Description of work</label>
+        <textarea id="f-desc" placeholder="What did you work on?"></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top: 14px;">
+      <button class="save-btn" id="save-btn" onclick="saveEntry()">
+        <i class="ti ti-device-floppy"></i> Save to sheet
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="log-header">
+      <div class="log-title">Today's entries</div>
+    </div>
+    <div id="entries-list"><div class="empty">No entries saved yet today</div></div>
+  </div>
+</div>
+
+<div class="saving-overlay" id="saving-overlay">
+  <div class="saving-box"><div class="spinner"></div> Saving to sheet…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIGURATION ───────────────────────────────────────────────────────────
+// Paste your Apps Script deployment URL between the quotes below.
+// It looks like: https://script.google.com/macros/s/LONG_ID_HERE/exec
+var APPS_SCRIPT_URL = '';
+// ────────────────────────────────────────────────────────────────────────────
+
+let who = 'dale';
+let recognition = null;
+let isRecording = false;
+let entries = [];
+
+// Show setup banner if URL not configured
+if (!APPS_SCRIPT_URL) {
+  document.getElementById('config-banner').style.display = 'block';
+}
+
+// Set today's date
+const today = new Date();
+document.getElementById('today-label').textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+document.getElementById('f-date').value = today.toISOString().split('T')[0];
+
+function setWho(w) {
+  who = w;
+  document.getElementById('btn-dale').classList.toggle('active', w === 'dale');
+  document.getElementById('btn-kelly').classList.toggle('active', w === 'kelly');
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function parseTime(text) {
+  if (!text) return '';
+  text = text.toLowerCase().trim();
+  const m12 = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/);
+  if (m12) {
+    let h = parseInt(m12[1]), min = m12[2] ? parseInt(m12[2]) : 0;
+    if (m12[3] === 'pm' && h !== 12) h += 12;
+    if (m12[3] === 'am' && h === 12) h = 0;
+    return pad(h) + ':' + pad(min);
+  }
+  const m24 = text.match(/(\d{1,2}):(\d{2})/);
+  if (m24) return pad(parseInt(m24[1])) + ':' + m24[2];
+  const mh = text.match(/\b(\d{1,2})\b/);
+  if (mh) { let h = parseInt(mh[1]); if (h < 7) h += 12; return pad(h) + ':00'; }
+  return '';
+}
+
+function parseTranscript(text) {
+  let start = '', end = '', desc = '';
+  const t = text.toLowerCase();
+
+  const timeTokens = [];
+  const allTimes = text.matchAll(/\b(\d{1,2})(?::(\d{2}))?\s*(?:am|pm)?/gi);
+  for (const m of allTimes) timeTokens.push({ parsed: parseTime(m[0]) });
+
+  const rangeMatch = t.match(/(?:from\s+)?([\d:apm\s]+?)\s+(?:to|until|till|through)\s+([\d:apm\s]+?)(?:\s*[,.]|\s+(?:work|do|on|i|–|-)|$)/i);
+  if (rangeMatch) { start = parseTime(rangeMatch[1]); end = parseTime(rangeMatch[2]); }
+
+  if (!start) {
+    const sm = text.match(/(?:start(?:ed|ing)?|begin|began)\s+(?:at\s+)?([\d:apm\s]+?)(?:\s*[,.]|\s+(?:to|until|stop|finish|end|work)|$)/i);
+    if (sm) start = parseTime(sm[1]);
+  }
+  if (!end) {
+    const em = text.match(/(?:stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?([\d:apm\s]+?)(?:\s*[,.]|\s+(?:work|on|do)|$)/i);
+    if (em) end = parseTime(em[1]);
+  }
+
+  if (!start && timeTokens.length >= 1) start = timeTokens[0].parsed;
+  if (!end && timeTokens.length >= 2) end = timeTokens[1].parsed;
+
+  desc = text
+    .replace(/(?:from\s+)?[\d:]+\s*(?:am|pm)?\s*(?:to|until|till|through)\s*[\d:]+\s*(?:am|pm)?/gi, '')
+    .replace(/(?:start(?:ed|ing)?|begin|began|stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?[\d:]+\s*(?:am|pm)?/gi, '')
+    .replace(/(?:work(?:ed|ing)?)\s+on\s+/gi, '')
+    .replace(/^[\s,.-]+|[\s,.-]+$/g, '')
+    .trim();
+
+  return { start, end, desc };
+}
+
+async function toggleMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Speech not supported — type manually', 'error'); return; }
+  if (isRecording) { recognition.stop(); return; }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+  } catch(err) {
+    showToast('Mic not allowed — check browser permissions', 'error');
+    return;
+  }
+
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    isRecording = true;
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('mic-icon').className = 'ti ti-player-stop';
+    document.getElementById('mic-hint').textContent = 'Listening… tap to stop';
+    document.getElementById('transcript').textContent = '';
+    document.getElementById('transcript').classList.remove('has-text');
+  };
+
+  let finalText = '';
+  recognition.onresult = (e) => {
+    let interim = '';
+    finalText = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    const display = finalText || interim;
+    document.getElementById('transcript').textContent = display;
+    document.getElementById('transcript').classList.toggle('has-text', !!display);
+  };
+
+  recognition.onerror = (e) => {
+    stopMic();
+    if (e.error !== 'no-speech') showToast('Mic error: ' + e.error, 'error');
+  };
+
+  recognition.onend = () => {
+    stopMic();
+    if (finalText) fillFromTranscript(finalText);
+  };
+
+  recognition.start();
+}
+
+function stopMic() {
+  isRecording = false;
+  document.getElementById('mic-btn').classList.remove('recording');
+  document.getElementById('mic-icon').className = 'ti ti-microphone';
+  document.getElementById('mic-hint').textContent = 'Tap to speak your entry';
+}
+
+function fillFromTranscript(text) {
+  const { start, end, desc } = parseTranscript(text);
+  if (start) document.getElementById('f-start').value = start;
+  if (end) document.getElementById('f-end').value = end;
+  if (desc) document.getElementById('f-desc').value = desc;
+}
+
+function fmt12(timeVal) {
+  if (!timeVal) return '';
+  const [h, m] = timeVal.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return h12 + ':' + pad(m) + ' ' + ampm;
+}
+
+async function saveEntry() {
+  if (!APPS_SCRIPT_URL) {
+    showToast('Apps Script URL not configured', 'error'); return;
+  }
+  const date = document.getElementById('f-date').value;
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  const desc = document.getElementById('f-desc').value.trim();
+
+  if (!date || (!start && !end && !desc)) {
+    showToast('Please fill in at least some fields', 'error'); return;
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  document.getElementById('saving-overlay').classList.add('show');
+
+  const payload = {
+    date: date,
+    startTime: start ? fmt12(start) : '',
+    endTime: end ? fmt12(end) : '',
+    who: who === 'dale' ? 'Dale' : 'Kelly',
+    description: desc
+  };
+
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    btn.disabled = false;
+    document.getElementById('saving-overlay').classList.remove('show');
+    if (result.success) {
+      entries.unshift({ ...payload });
+      renderEntries();
+      document.getElementById('f-start').value = end || '';
+      document.getElementById('f-end').value = '';
+      document.getElementById('f-desc').value = '';
+      document.getElementById('transcript').textContent = 'e.g. "Started at 9, stopped at 11:30, worked on client invoices"';
+      document.getElementById('transcript').classList.remove('has-text');
+      showToast('Saved to sheet ✓', 'success');
+    } else {
+      showToast('Error: ' + result.error, 'error');
+    }
+  } catch(err) {
+    btn.disabled = false;
+    document.getElementById('saving-overlay').classList.remove('show');
+    showToast('Could not reach sheet — check connection', 'error');
+  }
+}
+
+function renderEntries() {
+  const list = document.getElementById('entries-list');
+  if (!entries.length) { list.innerHTML = '<div class="empty">No entries saved yet today</div>'; return; }
+  list.innerHTML = entries.map(e => `
+    <div class="entry">
+      <div class="entry-top">
+        <span class="entry-who ${e.who.toLowerCase()}">${e.who}</span>
+        <span class="entry-times">${e.startTime || '–'} → ${e.endTime || '–'}</span>
+      </div>
+      <div class="entry-task">${e.description || '(no description)'}</div>
+    </div>
+  `).join('');
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
