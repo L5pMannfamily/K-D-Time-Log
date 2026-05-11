@@ -98,20 +98,10 @@
   .saving-box { background: var(--bg); border-radius: var(--radius); padding: 20px 28px; font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 12px; }
   .spinner { width: 20px; height: 20px; border: 2.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  .config-banner { background: #FAEEDA; border: 0.5px solid #EF9F27; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; font-size: 13px; color: #633806; line-height: 1.6; display: none; }
-  .config-banner strong { display: block; margin-bottom: 4px; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="app">
-
-  <div class="config-banner" id="config-banner">
-    <strong>⚙️ Setup needed</strong>
-    Open this file, find the line near the top of the &lt;script&gt; that says<br>
-    <code>var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyajGLGnRuA_2kP8mwi_ywJ9WW_uiG1yHaxecB6n-r7a-gJKsQ18LlqmHUHyguPNllM/exec'</code><br>
-    and paste your Apps Script deployment URL between the quotes, then save and re-upload to GitHub.
-  </div>
 
   <div class="header">
     <div class="logo"><i class="ti ti-clock"></i></div>
@@ -183,23 +173,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CONFIGURATION ───────────────────────────────────────────────────────────
-// Paste your Apps Script deployment URL between the quotes below.
+// ── CONFIGURATION ────────────────────────────────────────────────────────────
+// Paste your full Apps Script deployment URL between the quotes below.
 // It looks like: https://script.google.com/macros/s/LONG_ID_HERE/exec
-var APPS_SCRIPT_URL = 'AKfycbyajGLGnRuA_2kP8mwi_ywJ9WW_uiG1yHaxecB6n-r7a-gJKsQ18LlqmHUHyguPNllM';
-// ────────────────────────────────────────────────────────────────────────────
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyajGLGnRuA_2kP8mwi_ywJ9WW_uiG1yHaxecB6n-r7a-gJKsQ18LlqmHUHyguPNllM/exec';
+// ─────────────────────────────────────────────────────────────────────────────
 
 let who = 'dale';
 let recognition = null;
 let isRecording = false;
 let entries = [];
 
-// Show setup banner if URL not configured
-if (!APPS_SCRIPT_URL) {
-  document.getElementById('config-banner').style.display = 'block';
-}
-
-// Set today's date
 const today = new Date();
 document.getElementById('today-label').textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 document.getElementById('f-date').value = today.toISOString().split('T')[0];
@@ -251,7 +235,7 @@ function parseTranscript(text) {
   if (!start && timeTokens.length >= 1) start = timeTokens[0].parsed;
   if (!end && timeTokens.length >= 2) end = timeTokens[1].parsed;
 
-  // Extract description as everything after the last time-related phrase
+  // Grab everything after the last time-related phrase as the description
   const descMatch = text.match(/(?:(?:to|until|till|through|stop(?:ped)?|finish(?:ed)?|end(?:ed)?|done)\s+(?:at\s+)?[\d:]+\s*(?:am|pm)?[,.]?\s*)(.+)$/i);
   if (descMatch) {
     desc = descMatch[1].replace(/^(?:worked?\s+on|working\s+on|did|doing|on)\s+/i, '').trim();
@@ -353,23 +337,16 @@ async function saveEntry() {
   document.getElementById('saving-overlay').classList.add('show');
 
   const payload = {
-    date: date,
-    startTime: start ? fmt12(start) : '',
-    endTime: end ? fmt12(end) : '',
-    who: who === 'dale' ? 'Dale' : 'Kelly',
+    date:        date,
+    startTime:   start ? fmt12(start) : '',
+    endTime:     end   ? fmt12(end)   : '',
+    who:         who === 'dale' ? 'Dale' : 'Kelly',
     description: desc
   };
 
-// Use an Image request — bypasses CORS and redirect issues entirely
-  const params = new URLSearchParams({
-    date:        payload.date,
-    startTime:   payload.startTime,
-    endTime:     payload.endTime,
-    who:         payload.who,
-    description: payload.description
-  });
-
+  const params = new URLSearchParams(payload);
   const img = new Image();
+
   img.onload = img.onerror = () => {
     btn.disabled = false;
     document.getElementById('saving-overlay').classList.remove('show');
@@ -382,7 +359,9 @@ async function saveEntry() {
     document.getElementById('transcript').classList.remove('has-text');
     showToast('Saved to sheet ✓', 'success');
   };
+
   img.src = APPS_SCRIPT_URL + '?' + params.toString();
+}
 
 function renderEntries() {
   const list = document.getElementById('entries-list');
