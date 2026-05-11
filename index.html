@@ -297,11 +297,9 @@ function stopMic() {
 }
 
 function fillFromTranscript(text) {
+  console.log('RAW TRANSCRIPT:', JSON.stringify(text));
   const { start, end, desc } = parseTranscript(text);
-  if (start) document.getElementById('f-start').value = start;
-  if (end)   document.getElementById('f-end').value   = end;
-  if (desc)  document.getElementById('f-desc').value  = desc;
-}
+  console.log('PARSED:', { start, end, desc });
 
 function fmt12(timeVal) {
   if (!timeVal) return '';
