@@ -300,6 +300,7 @@ function fillFromTranscript(text) {
   console.log('RAW TRANSCRIPT:', JSON.stringify(text));
   const { start, end, desc } = parseTranscript(text);
   console.log('PARSED:', { start, end, desc });
+}
 
 function fmt12(timeVal) {
   if (!timeVal) return '';
