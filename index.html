@@ -363,12 +363,16 @@ async function saveEntry() {
   };
 
 try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(payload)
+    // Use GET with URL params — avoids CORS preflight issues with Apps Script
+    const params = new URLSearchParams({
+      date:        payload.date,
+      startTime:   payload.startTime,
+      endTime:     payload.endTime,
+      who:         payload.who,
+      description: payload.description
     });
-    const result = { success: true };
+    const response = await fetch(APPS_SCRIPT_URL + '?' + params.toString());
+    const result = await response.json();
     btn.disabled = false;
     document.getElementById('saving-overlay').classList.remove('show');
     if (result.success) {
