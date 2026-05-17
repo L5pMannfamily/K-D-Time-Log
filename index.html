@@ -350,20 +350,17 @@ async function saveEntry() {
     showToast('Saved to sheet ✓', 'success');
   }
 
-  // Try fetch first (works better on iOS), fall back to Image()
+  // Send request then wait 3 seconds for it to land before resetting the UI.
+  // no-cors means we can't read the response, but the request does go through.
+  // The 3s delay ensures Apps Script has time to write the row before we clear the form.
   try {
-    fetch(url, { mode: 'no-cors', keepalive: true })
-      .then(() => onSaveComplete())
-      .catch(() => {
-        const img = new Image();
-        img.onload = img.onerror = onSaveComplete;
-        img.src = url;
-      });
+    fetch(url, { mode: 'no-cors' });
   } catch(e) {
+    // fetch unavailable — fall back to Image()
     const img = new Image();
-    img.onload = img.onerror = onSaveComplete;
     img.src = url;
   }
+  setTimeout(onSaveComplete, 3000);
 }
 
 function renderEntries() {
