@@ -135,7 +135,7 @@
     </div>
 
     <div style="margin-top: 14px;">
-      <button class="save-btn" id="save-btn" onclick="()">
+      <button class="save-btn" id="save-btn" onclick="saveEntry()">
         <i class="ti ti-device-floppy"></i> Save to sheet
       </button>
     </div>
@@ -334,26 +334,7 @@ async function saveEntry() {
     description: desc
   };
 
-//   const params = new URLSearchParams(payload);
-//   const img = new Image();
-
-//   img.onload = img.onerror = () => {
-//     btn.disabled = false;
-//     document.getElementById('saving-overlay').classList.remove('show');
-//     entries.unshift({ ...payload });
-//     renderEntries();
-//     document.getElementById('f-start').value = end || '';
-//     document.getElementById('f-end').value = '';
-//     document.getElementById('f-desc').value = '';
-//     document.getElementById('transcript').textContent = 'e.g. "9am to 2pm tree removal"';
-//     document.getElementById('transcript').classList.remove('has-text');
-//     showToast('Saved to sheet ✓', 'success');
-//   };
-
-//   img.src = APPS_SCRIPT_URL + '?' + params.toString();
-// }
-
-const params = new URLSearchParams(payload);
+  const params = new URLSearchParams(payload);
   const url = APPS_SCRIPT_URL + '?' + params.toString();
 
   function onSaveComplete() {
@@ -374,19 +355,17 @@ const params = new URLSearchParams(payload);
     fetch(url, { mode: 'no-cors', keepalive: true })
       .then(() => onSaveComplete())
       .catch(() => {
-        // fetch failed, fall back to Image()
         const img = new Image();
         img.onload = img.onerror = onSaveComplete;
         img.src = url;
       });
   } catch(e) {
-    // fetch not available, use Image()
     const img = new Image();
     img.onload = img.onerror = onSaveComplete;
     img.src = url;
   }
 }
-  
+
 function renderEntries() {
   const list = document.getElementById('entries-list');
   if (!entries.length) { list.innerHTML = '<div class="empty">No entries saved yet today</div>'; return; }
